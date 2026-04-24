@@ -1,0 +1,10 @@
+{
+  "Test Accuracy": "97.70%",
+  "Top-3 Accuracy": "99.94%",
+  "Macro F1-Score": "0.9769",
+  "Weighted F1-Score": "0.9769",
+  "AUC-ROC (macro OvR)": "0.9997",
+  "Cohen's Kappa": "0.9744",
+  "MCC": "0.9745",
+  "Test Loss": "0.0690"
+}

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TomatoScan AI — Leaf Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Variables ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg          : #0b0f0a;
+      --surface     : #131810;
+      --surface2    : #1c2218;
+      --border      : #2a3426;
+      --accent      : #6dcc4a;
+      --accent2     : #a8f078;
+      --accent-glow : rgba(109,204,74,0.18);
+      --text        : #e8f0e4;
+      --text-muted  : #7d9474;
+      --red         : #f05050;
+      --orange      : #f0a050;
+      --radius      : 16px;
+      --font-head   : 'Syne', sans-serif;
+      --font-body   : 'DM Sans', sans-serif;
+      --transition  : 0.25s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Background pattern ──────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        radial-gradient(circle at 20% 15%, rgba(109,204,74,.07) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(109,204,74,.05) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ── Nav ─────────────────────────────────────────────────────────── */
+    nav {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(11,15,10,.92);
+      backdrop-filter: blur(12px);
+    }
+    nav .inner { display: flex; align-items: center; justify-content: space-between; max-width:1100px; margin:0 auto; padding:0 24px; }
+    .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.4rem; color: var(--accent); letter-spacing: -.02em; }
+    .logo span { color: var(--text-muted); font-weight: 400; }
+    .nav-badge {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 100px; font-size: .75rem;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      display: inline-block; width:7px; height:7px; border-radius:50%;
+      background: var(--accent); margin-right: 6px;
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    /* ── Hero ────────────────────────────────────────────────────────── */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--accent); font-size: .75rem; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 40px;
+      flex-wrap: wrap; margin-top: 48px;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-family: var(--font-head); font-size: 1.8rem; font-weight: 800; color: var(--accent); display: block; }
+    .stat-label { font-size: .78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    /* ── Upload Zone ─────────────────────────────────────────────────── */
+    .upload-section { padding: 0 0 80px; }
+    .upload-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .upload-header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .upload-header h2 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+    .step-badge {
+      background: var(--surface2); border: 1px solid var(--border);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .drop-zone {
+      margin: 28px;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 56px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--surface2); border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-size: 1.6rem;
+    }
+    .drop-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .drop-sub { font-size: .82rem; color: var(--text-muted); }
+    .drop-sub b { color: var(--accent); }
+
+    .or-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 0 28px 24px; color: var(--text-muted); font-size: .8rem;
+    }
+    .or-divider::before, .or-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .camera-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin: 0 28px 28px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .9rem; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .camera-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Preview & Analyze ───────────────────────────────────────────── */
+    #preview-section { display: none; padding: 0 28px 28px; }
+    .preview-inner {
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border); position: relative;
+    }
+    #preview-img {
+      width: 100%; max-height: 320px; object-fit: contain;
+      background: var(--surface2); display: block;
+    }
+    .preview-actions {
+      display: flex; gap: 10px; margin-top: 12px;
+    }
+    .btn {
+      padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer;
+      font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+      transition: var(--transition); flex: 1;
+    }
+    .btn-primary {
+      background: var(--accent); color: #0b0f0a;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-ghost {
+      background: var(--surface2); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+
+    /* ── Loading ─────────────────────────────────────────────────────── */
+    #loading-section { display: none; padding: 48px 28px; text-align: center; }
+    .spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--text-muted); font-size: .9rem; }
+    .loading-text strong { display: block; color: var(--text); font-family: var(--font-head); font-size: 1rem; margin-bottom: 4px; }
+
+    /* ── Camera Modal ────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; width: 90%; max-width: 500px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { font-family: var(--font-head); font-weight: 700; }
+    .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.4rem; }
+    #camera-feed { width: 100%; border-radius: 10px; background: #000; max-height: 360px; display: block; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+    /* ── Results Section ─────────────────────────────────────────────── */
+    #results-section { display: none; padding: 0 28px 28px; }
+    .result-verdict {
+      border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .verdict-healthy { background: rgba(109,204,74,.1); border: 1px solid rgba(109,204,74,.3); }
+    .verdict-disease { background: rgba(240,80,80,.08); border: 1px solid rgba(240,80,80,.25); }
+    .verdict-unknown { background: rgba(240,160,80,.08); border: 1px solid rgba(240,160,80,.25); }
+    .verdict-icon { font-size: 2.2rem; flex-shrink: 0; }
+    .verdict-title { font-family: var(--font-head); font-weight: 800; font-size: 1.15rem; margin-bottom: 2px; }
+    .verdict-sub { font-size: .82rem; color: var(--text-muted); }
+
+    /* Confidence bar */
+    .conf-bar-wrap { margin-bottom: 20px; }
+    .conf-label { display: flex; justify-content: space-between; font-size: .82rem; color: var(--text-muted); margin-bottom: 6px; }
+    .conf-label strong { color: var(--text); }
+    .conf-bar { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+    .conf-fill.high  { background: var(--accent); }
+    .conf-fill.med   { background: var(--orange); }
+    .conf-fill.low   { background: var(--red); }
+
+    /* Disease info card */
+    .info-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 20px;
+    }
+    .info-card h4 { font-family: var(--font-head); font-size: .9rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+    .info-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .info-label { font-size: .75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; min-width: 90px; padding-top: 2px; }
+    .info-val { font-size: .88rem; }
+    .severity-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: .72rem; font-weight: 600;
+    }
+    .sev-none { background: rgba(109,204,74,.15); color: var(--accent); }
+    .sev-low  { background: rgba(109,204,74,.1); color: #80c870; }
+    .sev-mod  { background: rgba(240,160,80,.15); color: var(--orange); }
+    .sev-sev  { background: rgba(240,80,80,.15); color: var(--red); }
+
+    /* Top-3 */
+    .top3-title { font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+    .top3-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .top3-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .top3-rank { font-family: var(--font-head); font-weight: 800; color: var(--text-muted); font-size: .85rem; min-width: 20px; }
+    .top3-name { flex: 1; font-size: .87rem; }
+    .top3-conf { font-family: var(--font-head); font-weight: 700; font-size: .9rem; color: var(--accent); }
+
+    /* Grad-CAM */
+    .gradcam-section { margin-bottom: 20px; }
+    .gradcam-title { font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .gradcam-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gradcam-img-wrap { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .gradcam-img-wrap img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .gradcam-img-label { font-size: .72rem; color: var(--text-muted); text-align: center; padding: 6px; background: var(--surface2); }
+
+    /* Latency chip */
+    .latency-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 100px;
+      font-size: .72rem; color: var(--text-muted);
+    }
+
+    /* ── About / How ─────────────────────────────────────────────────── */
+    .info-section {
+      border-top: 1px solid var(--border);
+      padding: 80px 0;
+    }
+    .section-tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+    .section-title { font-family: var(--font-head); font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -.02em; }
+    .section-body { color: var(--text-muted); max-width: 680px; margin-bottom: 40px; }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 16px; }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      transition: var(--transition);
+    }
+    .feature-card:hover { border-color: var(--accent); background: var(--surface2); }
+    .feature-icon { font-size: 1.6rem; margin-bottom: 12px; }
+    .feature-title { font-family: var(--font-head); font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+    .feature-desc { font-size: .82rem; color: var(--text-muted); }
+
+    /* ── Classes table ───────────────────────────────────────────────── */
+    .classes-section { border-top: 1px solid var(--border); padding: 80px 0; }
+    .classes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 32px; }
+    .class-pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 16px;
+      font-size: .83rem;
+    }
+    .class-pill span { display: block; font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: .8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .hero { padding: 56px 0 40px; }
+      .hero-stats { gap: 24px; }
+      .gradcam-imgs { grid-template-columns: 1fr; }
+      .preview-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="inner">
+    <div class="logo">TomatoScan<span> AI</span></div>
+    <div class="nav-badge"><span class="status-dot" id="status-dot"></span><span id="status-text">Checking…</span></div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-tag">🌿 VGG16 Transfer Learning · PlantVillage Dataset</div>
+    <h1>Detect Tomato Leaf<br/><em>Diseases Instantly</em></h1>
+    <p>Upload or capture a tomato leaf image. Our deep learning model identifies 9 diseases and healthy leaves — with Grad-CAM explainability.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">Disease Classes</span></div>
+      <div class="stat"><span class="stat-num">≥97%</span><span class="stat-label">Test Accuracy</span></div>
+      <div class="stat"><span class="stat-num">VGG16</span><span class="stat-label">Architecture</span></div>
+      <div class="stat"><span class="stat-num">Grad-CAM</span><span class="stat-label">Explainability</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── UPLOAD ── -->
+<section class="upload-section">
+  <div class="container">
+    <div class="upload-card">
+      <div class="upload-header">
+        <div class="step-badge">1</div>
+        <h2>Upload or Capture a Tomato Leaf</h2>
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="drop-icon">🍃</div>
+        <div class="drop-title">Drag & drop image here</div>
+        <div class="drop-sub">Supports JPG, PNG, WEBP — up to <b>10 MB</b></div>
+      </div>
+
+      <div class="or-divider">or use your camera</div>
+
+      <button class="camera-btn" onclick="openCamera()">
+        📷 &nbsp; Open Camera
+      </button>
+
+      <!-- Preview -->
+      <div id="preview-section">
+        <div class="preview-inner">
+          <img id="preview-img" src="" alt="Preview" />
+        </div>
+        <div class="preview-actions" style="margin-top:12px;">
+          <button class="btn btn-ghost" onclick="resetAll()">✕ &nbsp; Clear</button>
+          <button class="btn btn-primary" id="analyze-btn" onclick="analyzeImage()">
+            🔍 &nbsp; Analyze Leaf
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading-section">
+        <div class="spinner"></div>
+        <div class="loading-text">
+          <strong>Analyzing Leaf…</strong>
+          Running VGG16 inference and Grad-CAM · please wait
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section">
+        <!-- Verdict -->
+        <div id="verdict-box" class="result-verdict">
+          <div class="verdict-icon" id="verdict-icon">🌿</div>
+          <div>
+            <div class="verdict-title" id="verdict-title">—</div>
+            <div class="verdict-sub" id="verdict-sub">—</div>
+          </div>
+          <div style="margin-left:auto;">
+            <div class="latency-chip">⚡ <span id="latency-text">—</span></div>
+          </div>
+        </div>
+
+        <!-- Confidence bar -->
+        <div class="conf-bar-wrap">
+          <div class="conf-label">
+            <span>Confidence</span>
+            <strong id="conf-pct">—</strong>
+          </div>
+          <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Disease info -->
+        <div class="info-card" id="disease-info-card">
+          <h4 id="info-title">Disease Information</h4>
+          <div class="info-row">
+            <span class="info-label">Description</span>
+            <span class="info-val" id="info-description">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Treatment</span>
+            <span class="info-val" id="info-treatment">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Severity</span>
+            <span class="severity-badge" id="info-severity">—</span>
+          </div>
+        </div>
+
+        <!-- Top-3 -->
+        <div class="top3-title">Top 3 Predictions</div>
+        <div class="top3-list" id="top3-list"></div>
+
+        <!-- Grad-CAM -->
+        <div class="gradcam-section">
+          <div class="gradcam-title">
+            <span>Grad-CAM Explainability</span>
+            <button class="btn btn-ghost" style="flex:none; padding:6px 14px; font-size:.78rem;" onclick="loadGradcam()">Load Grad-CAM</button>
+          </div>
+          <div class="gradcam-imgs" id="gradcam-container">
+            <div style="grid-column:1/-1; text-align:center; color:var(--text-muted); font-size:.85rem; padding:20px;">
+              Click "Load Grad-CAM" to visualise model attention
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost" style="width:100%;" onclick="resetAll()">✕ &nbsp; Analyze Another Image</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ABOUT ── -->
+<section class="info-section">
+  <div class="container">
+    <div class="section-tag">How it works</div>
+    <div class="section-title">Research-Grade Deep Learning<br/>for Plant Health Monitoring</div>
+    <div class="section-body">
+      This system implements a two-phase VGG16 transfer learning pipeline trained on the PlantVillage tomato dataset. Phase 1 trains only the classification head while the VGG16 backbone stays frozen. Phase 2 fine-tunes the last convolutional block (block5) with a 10× lower learning rate for optimal generalisation.
+    </div>
+    <div class="cards-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏗️</div>
+        <div class="feature-title">VGG16 Architecture</div>
+        <div class="feature-desc">ImageNet-pretrained backbone with custom Dense(512) → Dense(256) classification head, BatchNorm, and Dropout regularisation.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-title">Class-Weight Balancing</div>
+        <div class="feature-desc">Sklearn's compute_class_weight (balanced) counters dataset skew across all 10 classes during training.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔬</div>
+        <div class="feature-title">Grad-CAM Explainability</div>
+        <div class="feature-desc">Gradient-weighted Class Activation Maps highlight which leaf regions drove the model's prediction.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Rigorous Evaluation</div>
+        <div class="feature-desc">Held-out test set with Accuracy, F1, AUC-ROC, Cohen's Kappa, MCC, and per-class analysis for journal reporting.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Heavy Augmentation</div>
+        <div class="feature-desc">Rotation, shift, shear, zoom, flips, and brightness jitter improve generalisation to real-world field conditions.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">Not-Tomato Detection</div>
+        <div class="feature-desc">Confidence threshold + green-channel heuristic flags non-tomato images before a false diagnosis is shown.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CLASSES ── -->
+<section class="classes-section">
+  <div class="container">
+    <div class="section-tag">Supported Classes</div>
+    <div class="section-title">10 Disease Categories</div>
+    <div class="section-body">The model distinguishes 9 tomato diseases plus a healthy class, covering the complete PlantVillage tomato taxonomy.</div>
+    <div class="classes-grid" id="classes-grid">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <p>TomatoScan AI &nbsp;·&nbsp; VGG16 Transfer Learning &nbsp;·&nbsp; PlantVillage Dataset</p>
+    <p style="margin-top:8px;">
+      Dataset: <a href="https://www.kaggle.com/datasets/kaustubhb999/tomatoleaf" target="_blank">kaustubhb999/tomatoleaf</a>
+      &nbsp;·&nbsp; Model: TensorFlow 2.x / Keras
+    </p>
+  </div>
+</footer>
+
+<!-- ── CAMERA MODAL ── -->
+<div class="modal-overlay" id="camera-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📷 Capture Tomato Leaf</h3>
+      <button class="close-btn" onclick="closeCamera()">✕</button>
+    </div>
+    <video id="camera-feed" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCamera()">Cancel</button>
+      <button class="btn btn-primary" onclick="capturePhoto()">📸 &nbsp; Capture</button>
+    </div>
+  </div>
+</div>
+<canvas id="capture-canvas" style="display:none"></canvas>
+
+<script>
+/* ── Config ──────────────────────────────────────────────────────── */
+// Change this to your Flask server URL when deployed
+const API_BASE = window.location.origin && window.location.origin !== 'null'
+  ? window.location.origin
+  : 'http://localhost:5000';
+
+
+/* ── State ───────────────────────────────────────────────────────── */
+let currentFile   = null;
+let cameraStream  = null;
+
+/* ── Health check ────────────────────────────────────────────────── */
+async function checkHealth() {
+  try {
+    const res  = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    document.getElementById('status-dot').style.background =
+      data.model_loaded ? 'var(--accent)' : 'var(--orange)';
+    document.getElementById('status-text').textContent =
+      data.model_loaded ? 'Model Ready' : 'Model Loading…';
+  } catch {
+    document.getElementById('status-dot').style.background = 'var(--red)';
+    document.getElementById('status-text').textContent = 'API Offline';
+  }
+}
+
+/* ── Load classes ────────────────────────────────────────────────── */
+const STATIC_CLASSES = [
+  { name:'Tomato___Bacterial_spot',               short:'Bacterial Spot' },
+  { name:'Tomato___Early_blight',                 short:'Early Blight' },
+  { name:'Tomato___Late_blight',                  short:'Late Blight' },
+  { name:'Tomato___Leaf_Mold',                    short:'Leaf Mold' },
+  { name:'Tomato___Septoria_leaf_spot',           short:'Septoria Leaf Spot' },
+  { name:'Tomato___Spider_mites Two-spotted_spider_mite', short:'Spider Mites' },
+  { name:'Tomato___Target_Spot',                  short:'Target Spot' },
+  { name:'Tomato___Tomato_Yellow_Leaf_Curl_Virus',short:'Yellow Leaf Curl Virus' },
+  { name:'Tomato___Tomato_mosaic_virus',          short:'Tomato Mosaic Virus' },
+  { name:'Tomato___healthy',                      short:'Healthy' },
+];
+
+function populateClasses(classes) {
+  const grid = document.getElementById('classes-grid');
+  grid.innerHTML = classes.map((c, i) => `
+    <div class="class-pill">
+      <strong>${c.short || c.name.replace('Tomato___','').replace(/_/g,' ')}</strong>
+      <span>Class ${i}</span>
+    </div>
+  `).join('');
+}
+
+async function loadClasses() {
+  try {
+    const res  = await fetch(`${API_BASE}/classes`);
+    const data = await res.json();
+    populateClasses(data.classes || STATIC_CLASSES);
+  } catch {
+    populateClasses(STATIC_CLASSES);
+  }
+}
+
+/* ── File input ──────────────────────────────────────────────────── */
+const fileInput = document.getElementById('file-input');
+const dropZone  = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file.');
+    return;
+  }
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-img').src = e.target.result;
+    showSection('preview');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ── Camera ──────────────────────────────────────────────────────── */
+async function openCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 } }
+    });
+    document.getElementById('camera-feed').srcObject = cameraStream;
+    document.getElementById('camera-modal').classList.add('open');
+  } catch (err) {
+    alert('Camera access denied or unavailable: ' + err.message);
+  }
+}
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('camera-modal').classList.remove('open');
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('camera-feed');
+  const canvas = document.getElementById('capture-canvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(blob => {
+    currentFile = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+    document.getElementById('preview-img').src = canvas.toDataURL('image/jpeg');
+    showSection('preview');
+    closeCamera();
+  }, 'image/jpeg', 0.92);
+}
+
+/* ── Sections ────────────────────────────────────────────────────── */
+function showSection(name) {
+  document.getElementById('preview-section').style.display  = name === 'preview'  ? 'block' : 'none';
+  document.getElementById('loading-section').style.display  = name === 'loading'  ? 'block' : 'none';
+  document.getElementById('results-section').style.display  = name === 'results'  ? 'block' : 'none';
+}
+
+function resetAll() {
+  currentFile = null;
+  fileInput.value = '';
+  document.getElementById('preview-img').src = '';
+  document.getElementById('gradcam-container').innerHTML = `
+    <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.85rem;padding:20px;">
+      Click "Load Grad-CAM" to visualise model attention
+    </div>`;
+  showSection('none');
+}
+
+/* ── Analyze ─────────────────────────────────────────────────────── */
+async function analyzeImage() {
+  if (!currentFile) return;
+  showSection('loading');
+
+  const form = new FormData();
+  form.append('image', currentFile);
+
+  try {
+    const res  = await fetch(`${API_BASE}/predict`, { method: 'POST', body: form });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || 'Prediction failed');
+    renderResults(data);
+    showSection('results');
+  } catch (err) {
+    alert('Error: ' + err.message);
+    showSection('preview');
+  }
+}
+
+/* ── Render Results ──────────────────────────────────────────────── */
+function renderResults(data) {
+  const { is_tomato, top_prediction: top, top3, thumb_base64, latency_ms } = data;
+
+  // Verdict
+  const vBox = document.getElementById('verdict-box');
+  vBox.className = 'result-verdict';
+  let icon, title, sub, cls;
+
+  if (!is_tomato) {
+    vBox.classList.add('verdict-unknown');
+    icon  = '❓';
+    title = 'Not a Tomato Leaf';
+    sub   = 'The image does not appear to be a tomato leaf. Please upload a clear close-up photo.';
+    cls   = 'sev-mod';
+  } else if (top.class.includes('healthy')) {
+    vBox.classList.add('verdict-healthy');
+    icon  = '✅';
+    title = 'Healthy Leaf Detected';
+    sub   = `Confidence: ${top.confidence.toFixed(1)}% — No disease detected.`;
+  } else {
+    vBox.classList.add('verdict-disease');
+    icon  = '⚠️';
+    title = top.short;
+    sub   = `Confidence: ${top.confidence.toFixed(1)}% — Disease detected.`;
+  }
+
+  document.getElementById('verdict-icon').textContent  = icon;
+  document.getElementById('verdict-title').textContent = title;
+  document.getElementById('verdict-sub').textContent   = sub;
+  document.getElementById('latency-text').textContent  = `${latency_ms} ms`;
+
+  // Confidence bar
+  const conf  = top.confidence;
+  const fill  = document.getElementById('conf-fill');
+  fill.style.width = '0%';
+  setTimeout(() => fill.style.width = conf + '%', 50);
+  fill.className = 'conf-fill ' + (conf >= 80 ? 'high' : conf >= 50 ? 'med' : 'low');
+  document.getElementById('conf-pct').textContent = conf.toFixed(1) + '%';
+
+  // Disease info
+  const info = top.info || {};
+  document.getElementById('info-title').textContent       = is_tomato ? top.short : 'No Match';
+  document.getElementById('info-description').textContent = info.description || '—';
+  document.getElementById('info-treatment').textContent   = info.treatment   || '—';
+  const sevEl = document.getElementById('info-severity');
+  const sev   = (info.severity || 'N/A').toLowerCase();
+  sevEl.textContent = info.severity || 'N/A';
+  sevEl.className   = 'severity-badge ' +
+    (sev === 'none' ? 'sev-none' : sev.includes('severe') ? 'sev-sev' : sev.includes('low') ? 'sev-low' : 'sev-mod');
+
+  // Top-3
+  const list = document.getElementById('top3-list');
+  list.innerHTML = top3.map((item, i) => `
+    <div class="top3-item">
+      <span class="top3-rank">#${i+1}</span>
+      <span class="top3-name">${item.short}</span>
+      <span class="top3-conf">${item.confidence.toFixed(1)}%</span>
+    </div>
+  `).join('');
+
+  // Store thumb for gradcam
+  window._currentThumb = thumb_base64;
+}
+
+/* ── Grad-CAM ────────────────────────────────────────────────────── */
+async function loadGradcam() {
+  if (!currentFile) return;
+  const container = document.getElementById('gradcam-container');
+  container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);">⏳ Computing Grad-CAM…</div>`;
+
+  const form = new FormData();
+  form.append('image', currentFile);
+
+  try {
+    const res  = await fetch(`${API_BASE}/gradcam`, { method: 'POST', body: form });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data.error || 'Grad-CAM failed');
+
+    container.innerHTML = `
+      <div class="gradcam-img-wrap">
+        <img src="data:image/jpeg;base64,${window._currentThumb || ''}" alt="Original" />
+        <div class="gradcam-img-label">Original Image</div>
+      </div>
+      <div class="gradcam-img-wrap">
+        <img src="data:image/jpeg;base64,${data.gradcam_base64}" alt="Grad-CAM" />
+        <div class="gradcam-img-label">Grad-CAM Overlay</div>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--red);">Grad-CAM error: ${err.message}</div>`;
+  }
+}
+
+/* ── Init ────────────────────────────────────────────────────────── */
+checkHealth();
+loadClasses();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "class_indices": {
+    "Tomato___Bacterial_spot": 0,
+    "Tomato___Early_blight": 1,
+    "Tomato___Late_blight": 2,
+    "Tomato___Leaf_Mold": 3,
+    "Tomato___Septoria_leaf_spot": 4,
+    "Tomato___Spider_mites Two-spotted_spider_mite": 5,
+    "Tomato___Target_Spot": 6,
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 7,
+    "Tomato___Tomato_mosaic_virus": 8,
+    "Tomato___healthy": 9
+  },
+  "idx_to_class": {
+    "0": "Tomato___Bacterial_spot",
+    "1": "Tomato___Early_blight",
+    "2": "Tomato___Late_blight",
+    "3": "Tomato___Leaf_Mold",
+    "4": "Tomato___Septoria_leaf_spot",
+    "5": "Tomato___Spider_mites Two-spotted_spider_mite",
+    "6": "Tomato___Target_Spot",
+    "7": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "8": "Tomato___Tomato_mosaic_virus",
+    "9": "Tomato___healthy"
+  },
+  "num_classes": 10,
+  "image_size": [
+    224,
+    224
+  ],
+  "preprocessing": "vgg16_preprocess_input",
+  "test_metrics": {
+    "Test Accuracy": "97.70%",
+    "Top-3 Accuracy": "99.94%",
+    "Macro F1-Score": "0.9769",
+    "Weighted F1-Score": "0.9769",
+    "AUC-ROC (macro OvR)": "0.9997",
+    "Cohen's Kappa": "0.9744",
+    "MCC": "0.9745",
+    "Test Loss": "0.0690"
+  }
+}
